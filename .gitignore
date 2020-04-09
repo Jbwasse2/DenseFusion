@@ -1,4 +1,4 @@
-datasets/linemod/Linemod_preprocessed
+datasets/linemod/
 datasets/ycb/YCB_Video_Dataset
 *.zip
 *__pycache__
