@@ -1,19 +1,21 @@
 import argparse
 import os
+import pdb
 import random
+
+import numpy as np
 import torch
-import torch.nn as nn
-import torch.nn.parallel
 import torch.backends.cudnn as cudnn
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.nn.parallel
 import torch.optim as optim
 import torch.utils.data
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
-from torch.autograd import Variable
 from PIL import Image
-import numpy as np
-import pdb
-import torch.nn.functional as F
+from torch.autograd import Variable
+
 from lib.pspnet import PSPNet
 
 psp_models = {
@@ -171,6 +173,7 @@ class PoseRefineNet(nn.Module):
     def __init__(self, num_points, num_obj):
         super(PoseRefineNet, self).__init__()
         self.num_points = num_points
+        self.lstm = torch.nn.LSTM(1024, 1024, 4)
         self.feat = PoseRefineNetFeat(num_points)
         
         self.conv1_r = torch.nn.Linear(1024, 512)
@@ -189,7 +192,7 @@ class PoseRefineNet(nn.Module):
         
         x = x.transpose(2, 1).contiguous()
         ap_x = self.feat(x, emb)
-
+        ap_x = self.lstm(ap_x)
         rx = F.relu(self.conv1_r(ap_x))
         tx = F.relu(self.conv1_t(ap_x))   
 
