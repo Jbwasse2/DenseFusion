@@ -4,6 +4,7 @@ import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torchvision import models
 
 def load_weights_sequential(target, source_state):
     new_dict = OrderedDict()
@@ -121,25 +122,46 @@ class ResNet(nn.Module):
         x_3 = self.layer3(x)
         x = self.layer4(x_3)
 
-        return x, x_3
+        return x
 
 
 def resnet18(pretrained=False):
-    model = ResNet(BasicBlock, [2, 2, 2, 2])
+    if pretrained == False:
+        model = ResNet(BasicBlock, [2, 2, 2, 2])
+    else:
+        model = models.resnet18(pretrained=True)
+        # remove last two layers (avgpool, fc)
+        model = nn.Sequential(*list(model.children())[:-2])
     return model
 
 def resnet34(pretrained=False):
-    model = ResNet(BasicBlock, [3, 4, 6, 3])
+    if pretrained == False:
+        model = ResNet(BasicBlock, [3, 4, 6, 3])
+    else:
+        model = models.resnet34(pretrained=True)
+        model = nn.Sequential(*list(model.children())[:-2])
     return model
 
 def resnet50(pretrained=False):
-    model = ResNet(Bottleneck, [3, 4, 6, 3])
+    if pretrained == False:
+        model = ResNet(Bottleneck, [3, 4, 6, 3])
+    else:
+        model = models.resnet50(pretrained=True)
+        model = nn.Sequential(*list(model.children())[:-2])
     return model
 
 def resnet101(pretrained=False):
-    model = ResNet(Bottleneck, [3, 4, 23, 3])
+    if pretrained == False:
+        model = ResNet(Bottleneck, [3, 4, 23, 3])
+    else:
+        model = models.resnet101(pretrained=True)
+        model = nn.Sequential(*list(model.children())[:-2])
     return model
 
 def resnet152(pretrained=False):
-    model = ResNet(Bottleneck, [3, 8, 36, 3])
+    if pretrained == False:
+        model = ResNet(Bottleneck, [3, 8, 36, 3])
+    else:
+        model = models.resnet152(pretrained=True)
+        model = nn.Sequential(*list(model.children())[:-2])
     return model

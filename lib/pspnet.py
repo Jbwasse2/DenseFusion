@@ -39,7 +39,7 @@ class PSPUpsample(nn.Module):
 
 class PSPNet(nn.Module):
     def __init__(self, n_classes=21, sizes=(1, 2, 3, 6), psp_size=2048, deep_features_size=1024, backend='resnet18',
-                 pretrained=False):
+                 pretrained=True):
         super(PSPNet, self).__init__()
         self.feats = getattr(extractors, backend)(pretrained)
         self.psp = PSPModule(psp_size, 1024, sizes)
@@ -62,7 +62,7 @@ class PSPNet(nn.Module):
         )
 
     def forward(self, x):
-        f, class_f = self.feats(x) 
+        f = self.feats(x) 
         p = self.psp(f)
         p = self.drop_1(p)
 
