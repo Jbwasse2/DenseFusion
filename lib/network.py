@@ -1,19 +1,22 @@
 import argparse
 import os
+import pdb
 import random
+
+import numpy as np
+import pudb
 import torch
-import torch.nn as nn
-import torch.nn.parallel
 import torch.backends.cudnn as cudnn
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.nn.parallel
 import torch.optim as optim
 import torch.utils.data
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
-from torch.autograd import Variable
 from PIL import Image
-import numpy as np
-import pdb
-import torch.nn.functional as F
+from torch.autograd import Variable
+
 from lib.pspnet import PSPNet
 
 psp_models = {
@@ -190,6 +193,51 @@ class PoseRefineNet(nn.Module):
         x = x.transpose(2, 1).contiguous()
         ap_x = self.feat(x, emb)
 
+        rx = F.relu(self.conv1_r(ap_x))
+        tx = F.relu(self.conv1_t(ap_x))   
+
+        rx = F.relu(self.conv2_r(rx))
+        tx = F.relu(self.conv2_t(tx))
+
+        rx = self.conv3_r(rx).view(bs, self.num_obj, 4)
+        tx = self.conv3_t(tx).view(bs, self.num_obj, 3)
+
+        b = 0
+        out_rx = torch.index_select(rx[b], 0, obj[b])
+        out_tx = torch.index_select(tx[b], 0, obj[b])
+
+        return out_rx, out_tx
+
+class PoseRefineNetRNN(nn.Module):
+    def __init__(self, num_points, num_obj):
+        super(PoseRefineNetRNN, self).__init__()
+        self.num_points = num_points
+        self.hidden_layer_size = 1024
+        self.num_layers = 4
+        self.lstm = torch.nn.LSTM(1024, self.hidden_layer_size, self.num_layers)
+        self.feat = PoseRefineNetFeat(num_points)
+        
+        self.conv1_r = torch.nn.Linear(1024, 512)
+        self.conv1_t = torch.nn.Linear(1024, 512)
+
+        self.conv2_r = torch.nn.Linear(512, 128)
+        self.conv2_t = torch.nn.Linear(512, 128)
+
+        self.conv3_r = torch.nn.Linear(128, num_obj*4) #quaternion
+        self.conv3_t = torch.nn.Linear(128, num_obj*3) #translation
+
+        self.num_obj = num_obj
+        self.ho = torch.zeros(self.num_layers,1,self.hidden_layer_size)
+        self.co = torch.zeros(self.num_layers,1,self.hidden_layer_size)
+        self.ho = self.ho.cuda()
+        self.co = self.co.cuda()
+
+    def forward(self, x, emb, obj):
+        bs = x.size()[0]
+        x = x.transpose(2, 1).contiguous()
+        ap_x = self.feat(x, emb)
+        ap_x = ap_x.unsqueeze(0)
+        ap_x, (ho,co) = self.lstm(ap_x, (self.ho,self.co))
         rx = F.relu(self.conv1_r(ap_x))
         tx = F.relu(self.conv1_t(ap_x))   
 
