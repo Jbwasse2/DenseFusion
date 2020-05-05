@@ -31,7 +31,7 @@ parser.add_argument('--n_epochs', default=600, help="epochs to train")
 parser.add_argument('--workers', type=int, default=0, help='number of data loading workers')
 parser.add_argument('--lr', default=0.0001, help="learning rate")
 parser.add_argument('--logs_path', default='logs/', help="path to save logs")
-parser.add_argument('--model_save_path', default='trained_models/vanilla_model.pth', help="path to save models")
+parser.add_argument('--model_save_path', default='trained_models/vanilla_model', help="path to save models")
 parser.add_argument('--log_dir', default='logs/', help="path to save logs")
 parser.add_argument('--resume_model', default='', help="resume model name")
 parser.add_argument('--start_epoch', default=1)
@@ -150,7 +150,7 @@ if __name__ == '__main__':
             train_all_cost += semantic_loss.item()
             semantic_loss.backward()
             optimizer.step()
-            logger.info('Train time {0} Batch {1} CEloss {2}'.format(time.strftime("%Hh %Mm %Ss", time.gmtime(time.time() - st_time)), train_time, semantic_loss.item()))
+#            logger.info('Train time {0} Batch {1} CEloss {2}'.format(time.strftime("%Hh %Mm %Ss", time.gmtime(time.time() - st_time)), train_time, semantic_loss.item()))
             if train_time != 0 and train_time % 1000 == 0:
                 torch.save(model.state_dict(), os.path.join(opt.model_save_path, 'model_current.pth'))
             train_time += 1
