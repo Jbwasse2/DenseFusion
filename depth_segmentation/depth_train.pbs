@@ -81,4 +81,4 @@ source ~/.bashrc
 # Activate anaconda environment (in this case I assume its called cv)
 conda activate cv
 # Run the python scripts
-python train.py --train_depth True --model_train_path trained_models/depth_model.pth
+python train.py --train_depth True --model_save_path trained_models/depth_model.pth
