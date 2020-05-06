@@ -23,12 +23,16 @@ import sys
 sys.path.append("..")
 from lib.utils import setup_logger
 
+import resource
+rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
+resource.setrlimit(resource.RLIMIT_NOFILE, (4096, rlimit[1]))
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--train_depth', default = False)
 parser.add_argument('--dataset_root', default='../../data/data/YCB/YCB_Video_Dataset/', help="dataset root dir (''YCB_Video Dataset'')")
 parser.add_argument('--batch_size', default=3, help="batch size")
-parser.add_argument('--n_epochs', default=600, help="epochs to train")
-parser.add_argument('--workers', type=int, default=3, help='number of data loading workers')
+parser.add_argument('--n_epochs', default=100, help="epochs to train")
+parser.add_argument('--workers', type=int, default=10, help='number of data loading workers')
 parser.add_argument('--lr', default=0.0001, help="learning rate")
 parser.add_argument('--logs_path', default='logs/', help="path to save logs")
 parser.add_argument('--model_save_path', default='trained_models/vanilla_model', help="path to save models")
@@ -76,8 +80,6 @@ def voc_ap(rec, prec):
 
 def eval_model(model, train_depth):
     test_time = 0
-    logger = setup_logger('epoch%d_test' % epoch, os.path.join(opt.log_dir, 'epoch_%d_test_log.txt' % epoch))
-    logger.info('Test time {0}'.format(time.strftime("%Hh %Mm %Ss", time.gmtime(time.time() - st_time)) + ', ' + 'Testing started'))
     targets, preds = [], []
     with torch.no_grad():
         for j, data in enumerate(test_dataloader, 0):
@@ -131,7 +133,7 @@ if __name__ == '__main__':
     best_val_cost = np.Inf
     st_time = time.time()
 
-    for epoch in range(opt.start_epoch, 5):#opt.n_epochs):
+    for epoch in range(opt.start_epoch, opt.n_epochs):
         model.train()
         train_all_cost = 0.0
         train_time = 0
