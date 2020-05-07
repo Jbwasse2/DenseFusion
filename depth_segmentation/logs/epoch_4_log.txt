@@ -1,0 +1,2 @@
+2020-05-06 14:30:41,581 : Epoch 4: Train time 00h 46m 40s, Training started
+2020-05-06 14:46:17,974 : Train Finish Avg CEloss: 0.5819067315348766

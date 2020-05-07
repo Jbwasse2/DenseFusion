@@ -1,0 +1,2 @@
+2020-05-07 11:56:46,877 : Epoch 86: Train time 22h 12m 45s, Training started
+2020-05-07 12:12:31,303 : Train Finish Avg CEloss: 0.057250607976646356

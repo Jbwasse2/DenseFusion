@@ -1,0 +1,2 @@
+2020-05-07 02:03:07,573 : Epoch 48: Train time 12h 19m 06s, Training started
+2020-05-07 02:18:58,033 : Train Finish Avg CEloss: 0.0813588619312628
