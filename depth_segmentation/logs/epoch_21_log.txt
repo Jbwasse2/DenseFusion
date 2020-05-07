@@ -1,0 +1,2 @@
+2020-05-06 20:26:20,402 : Epoch 21: Train time 06h 42m 10s, Training started
+2020-05-06 20:46:28,935 : Train Finish Avg CEloss: 0.1300565526649204

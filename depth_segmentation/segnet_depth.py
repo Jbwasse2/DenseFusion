@@ -6,6 +6,8 @@ import functools
 from torch.optim import lr_scheduler
 import torch.nn.functional as F
 from copy import deepcopy
+import os
+os.environ['TORCH_HOME'] = 'modelsfoo\\vgg'
 
 
 ###############################################################################

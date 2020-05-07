@@ -1,0 +1,2 @@
+2020-05-07 00:07:55,792 : Epoch 32: Train time 10h 23m 45s, Training started
+2020-05-07 00:28:05,613 : Train Finish Avg CEloss: 0.10301869081464012
