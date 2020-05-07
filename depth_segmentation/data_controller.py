@@ -19,6 +19,7 @@ class SegDataset(data.Dataset):
         self.path = []
         self.real_path = []
         self.use_noise = use_noise
+        self.failures = 0
         self.root = root_dir
         input_file = open(txtlist)
         while 1:
@@ -41,63 +42,68 @@ class SegDataset(data.Dataset):
         self.back_front = np.array([[1 for i in range(640)] for j in range(480)])
 
     def __getitem__(self, idx):
-        index = random.randint(0, self.data_len - 10)
+        try:
+            index = random.randint(0, self.data_len - 10)
 
-        label = np.array(Image.open('{0}/{1}-label.png'.format(self.root, self.path[index])))
-        meta = scio.loadmat('{0}/{1}-meta.mat'.format(self.root, self.path[index]))
-        depth = np.array(Image.open('{0}/{1}-depth.png'.format(self.root, self.path[index])))
-        if not self.use_noise:
-            rgb = np.array(Image.open('{0}/{1}-color.png'.format(self.root, self.path[index])).convert("RGB"))
-        else:
-            rgb = np.array(self.trancolor(Image.open('{0}/{1}-color.png'.format(self.root, self.path[index])).convert("RGB")))
+            label = np.array(Image.open('{0}/{1}-label.png'.format(self.root, self.path[index])))
+            meta = scio.loadmat('{0}/{1}-meta.mat'.format(self.root, self.path[index]))
+            depth = np.array(Image.open('{0}/{1}-depth.png'.format(self.root, self.path[index])))
+            if not self.use_noise:
+                rgb = np.array(Image.open('{0}/{1}-color.png'.format(self.root, self.path[index])).convert("RGB"))
+            else:
+                rgb = np.array(self.trancolor(Image.open('{0}/{1}-color.png'.format(self.root, self.path[index])).convert("RGB")))
 
-        if False and self.path[index][:8] == 'data_syn':
-            rgb = Image.open('{0}/{1}-color.png'.format(self.root, self.path[index])).convert("RGB")
-            rgb = ImageEnhance.Brightness(rgb).enhance(1.5).filter(ImageFilter.GaussianBlur(radius=0.8))
-            rgb = np.array(self.trancolor(rgb))
-            seed = random.randint(0, self.back_len - 10)
-            back = np.array(self.trancolor(Image.open('{0}/{1}-color.png'.format(self.root, self.path[seed])).convert("RGB")))
-            back_label = np.array(Image.open('{0}/{1}-label.png'.format(self.root, self.path[seed])))
-            mask = ma.getmaskarray(ma.masked_equal(label, 0))
-            back = np.transpose(back, (2, 0, 1))
-            rgb = np.transpose(rgb, (2, 0, 1))
-            rgb = rgb + np.random.normal(loc=0.0, scale=5.0, size=rgb.shape)
-            rgb = back * mask + rgb
-            label = back_label * mask + label
-            rgb = np.transpose(rgb, (1, 2, 0))
-            #scipy.misc.imsave('embedding_final/rgb_{0}.png'.format(index), rgb)
-            #scipy.misc.imsave('embedding_final/label_{0}.png'.format(index), label)
-            
-        if self.use_noise:
-            choice = random.randint(0, 3)
-            if choice == 0:
-                rgb = np.fliplr(rgb)
-                depth = np.fliplr(depth)
-                label = np.fliplr(label)
-            elif choice == 1:
-                rgb = np.flipud(rgb)
-                depth = np.flipud(depth)
-                label = np.flipud(label)
-            elif choice == 2:
-                rgb = np.fliplr(rgb)
-                rgb = np.flipud(rgb)
-                depth = np.fliplr(depth)
-                depth = np.flipud(depth)
-                label = np.fliplr(label)
-                label = np.flipud(label)
+            if  self.path[index][:8] == 'data_syn':
+                rgb = Image.open('{0}/{1}-color.png'.format(self.root, self.path[index])).convert("RGB")
+                rgb = ImageEnhance.Brightness(rgb).enhance(1.5).filter(ImageFilter.GaussianBlur(radius=0.8))
+                rgb = np.array(self.trancolor(rgb))
+                seed = random.randint(0, self.back_len - 10)
+                back = np.array(self.trancolor(Image.open('{0}/{1}-color.png'.format(self.root, self.path[seed])).convert("RGB")))
+                back_label = np.array(Image.open('{0}/{1}-label.png'.format(self.root, self.path[seed])))
+                mask = ma.getmaskarray(ma.masked_equal(label, 0))
+                back = np.transpose(back, (2, 0, 1))
+                rgb = np.transpose(rgb, (2, 0, 1))
+                rgb = rgb + np.random.normal(loc=0.0, scale=5.0, size=rgb.shape)
+                rgb = back * mask + rgb
+                label = back_label * mask + label
+                rgb = np.transpose(rgb, (1, 2, 0))
+                #scipy.misc.imsave('embedding_final/rgb_{0}.png'.format(index), rgb)
+                #scipy.misc.imsave('embedding_final/label_{0}.png'.format(index), label)
                 
+            if self.use_noise:
+                choice = random.randint(0, 3)
+                if choice == 0:
+                    rgb = np.fliplr(rgb)
+                    depth = np.fliplr(depth)
+                    label = np.fliplr(label)
+                elif choice == 1:
+                    rgb = np.flipud(rgb)
+                    depth = np.flipud(depth)
+                    label = np.flipud(label)
+                elif choice == 2:
+                    rgb = np.fliplr(rgb)
+                    rgb = np.flipud(rgb)
+                    depth = np.fliplr(depth)
+                    depth = np.flipud(depth)
+                    label = np.fliplr(label)
+                    label = np.flipud(label)
+                    
 
-        obj = meta['cls_indexes'].flatten().astype(np.int32)
-        obj = np.append(obj, [0], axis=0)
-        target = copy.deepcopy(label)
+            obj = meta['cls_indexes'].flatten().astype(np.int32)
+            obj = np.append(obj, [0], axis=0)
+            target = copy.deepcopy(label)
 
-        rgb = np.transpose(rgb, (2, 0, 1))
-        rgb = self.norm(torch.from_numpy(rgb.astype(np.float32)))
-        # depth = self.norm(torch.from_numpy(depth.astype(np.float32)))
-        depth = torch.unsqueeze(torch.from_numpy(depth.astype(np.float32)),0)
-        target = torch.from_numpy(target.astype(np.int64))
-        # print(rgb.size(), depth.size())
-        return rgb, depth, target
+            rgb = np.transpose(rgb, (2, 0, 1))
+            rgb = self.norm(torch.from_numpy(rgb.astype(np.float32)))
+            # depth = self.norm(torch.from_numpy(depth.astype(np.float32)))
+            depth = torch.unsqueeze(torch.from_numpy(depth.astype(np.float32)),0)
+            target = torch.from_numpy(target.astype(np.int64))
+            # print(rgb.size(), depth.size())
+            return rgb, depth, target
+        except Exception as e:
+            self.failures += 1
+            print("failures=",self.failures)
+            return self.__getitem__(0)
 
 
     def __len__(self):
