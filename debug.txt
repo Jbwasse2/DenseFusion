@@ -1,0 +1,40 @@
++ set -e
++ export PYTHONUNBUFFERED=True
++ PYTHONUNBUFFERED=True
++ export CUDA_VISIBLE_DEVICES=0
++ CUDA_VISIBLE_DEVICES=0
++ python3 ./tools/train.py --dataset linemod --dataset_root ./datasets/linemod/Linemod_preprocessed
+/home/justin/6D_Pose_Estimation/DenseFusion/lib/transformations.py:1912: UserWarning: failed to import module _transformations
+  warnings.warn('failed to import module %s' % name)
+/home/justin/6D_Pose_Estimation/DenseFusion/datasets/linemod/dataset.py:66: YAMLLoadWarning: calling yaml.load() without Loader=... is deprecated, as the default Loader is unsafe. Please read https://msg.pyyaml.org/load for full details.
+  self.meta[item] = yaml.load(meta_file)
+Object 1 buffer loaded
+Object 2 buffer loaded
+Object 1 buffer loaded
+Object 2 buffer loaded
+>>>>>>>>----------Dataset loaded!---------<<<<<<<<
+length of the training set: 367
+length of the testing set: 208
+number of sample points on mesh: 500
+symmetry object list: [7, 8]
+/home/justin/anaconda3/envs/cv/lib/python3.6/site-packages/torch/nn/functional.py:52: UserWarning: size_average and reduce args will be deprecated, please use reduction='elementwise_mean' instead.
+  warnings.warn(warning.format(ret))
+2020-04-16 10:27:09,782 : Train time 00h 00m 00s, Training started
+/home/justin/anaconda3/envs/cv/lib/python3.6/site-packages/torch/nn/functional.py:1890: UserWarning: nn.functional.upsample is deprecated. Use nn.functional.interpolate instead.
+  warnings.warn("nn.functional.upsample is deprecated. Use nn.functional.interpolate instead.")
+/home/justin/anaconda3/envs/cv/lib/python3.6/site-packages/torch/nn/functional.py:1961: UserWarning: Default upsampling behavior when mode=bilinear is changed to align_corners=False since 0.4.0. Please specify align_corners=True if the old behavior is desired. See the documentation of nn.Upsample for details.
+  "See the documentation of nn.Upsample for details.".format(mode))
+/home/justin/anaconda3/envs/cv/lib/python3.6/site-packages/torch/nn/modules/upsampling.py:122: UserWarning: nn.Upsampling is deprecated. Use nn.functional.interpolate instead.
+  warnings.warn("nn.Upsampling is deprecated. Use nn.functional.interpolate instead.")
+/home/justin/anaconda3/envs/cv/lib/python3.6/site-packages/torch/nn/modules/container.py:91: UserWarning: Implicit dimension choice for log_softmax has been deprecated. Change the call to include dim=X as an argument.
+  input = module(input)
+Traceback (most recent call last):
+  File "./tools/train.py", line 238, in <module>
+    main()
+  File "./tools/train.py", line 140, in main
+    pred_r, pred_t, pred_c, emb = estimator(img, points, choose, idx)
+  File "/home/justin/anaconda3/envs/cv/lib/python3.6/site-packages/torch/nn/modules/module.py", line 477, in __call__
+    result = self.forward(*input, **kwargs)
+  File "/home/justin/6D_Pose_Estimation/DenseFusion/lib/network.py", line 102, in forward
+    emb = torch.gather(emb, 2, choose).contiguous()
+RuntimeError: Expected object of type torch.cuda.LongTensor but found type torch.LongTensor for argument #3 'index'

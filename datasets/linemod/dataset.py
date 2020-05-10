@@ -1,24 +1,24 @@
-import torch.utils.data as data
-from PIL import Image
+import argparse
+import codecs
+import copy
+import errno
+import json
 import os
 import os.path
-import errno
-import torch
-import json
-import codecs
-import numpy as np
-import sys
-import torchvision.transforms as transforms
-import argparse
-import json
-import time
 import random
-import numpy.ma as ma
-import copy
-import scipy.misc
-import scipy.io as scio
-import yaml
+import sys
+import time
+
 import cv2
+import numpy as np
+import numpy.ma as ma
+import scipy.io as scio
+import scipy.misc
+import torch
+import torch.utils.data as data
+import torchvision.transforms as transforms
+import yaml
+from PIL import Image
 
 
 class PoseDataset(data.Dataset):

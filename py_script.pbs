@@ -61,7 +61,7 @@
 ##                                                            ##
 ################################################################
 #
-#PBS -l walltime=04:00:00
+
 #PBS -l nodes=1:ppn=1:TeslaK40M
 #PBS -N python_gpu_script
 #PBS -q secondary 
@@ -69,7 +69,9 @@
 #PBS -o py_gpu_script.out                                                            
 #PBS -e py_gpu_script.err
 #PBS -m be 
-#PBS -e jliu158@illinois.edu
+
+#PBS -e your@email
+
 #
 #####################################
 
@@ -82,7 +84,9 @@ source ~/.bashrc
 conda activate cv
 nvidia-smi
 # Run the python scripts
-./experiments/scripts/eval_linemod.sh
+
+python ./experiments/scripts/eval_linemod.sh
+
 
 nvcc --version
 which nvcc

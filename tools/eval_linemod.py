@@ -1,33 +1,36 @@
-import _init_paths
 import argparse
+import copy
 import os
 import random
+
 import numpy as np
-import yaml
-import copy
 import torch
+import torch.backends.cudnn as cudnn
 import torch.nn as nn
 import torch.nn.parallel
-import torch.backends.cudnn as cudnn
 import torch.optim as optim
 import torch.utils.data
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
+import yaml
 from torch.autograd import Variable
+
+import _init_paths
 from datasets.linemod.dataset import PoseDataset as PoseDataset_linemod
-from lib.network import PoseNet, PoseRefineNet
+from lib.knn.__init__ import KNearestNeighbor
 from lib.loss import Loss
 from lib.loss_refiner import Loss_refine
-from lib.transformations import euler_matrix, quaternion_matrix, quaternion_from_matrix
-from lib.knn.__init__ import KNearestNeighbor
+from lib.network import PoseNet, PoseRefineNetRNN
+from lib.transformations import (euler_matrix, quaternion_from_matrix,
+                                 quaternion_matrix)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset_root', type=str, default = '', help='dataset root dir')
 parser.add_argument('--model', type=str, default = '',  help='resume PoseNet model')
 parser.add_argument('--refine_model', type=str, default = '',  help='resume PoseRefineNet model')
 opt = parser.parse_args()
-
+opt.refine_model ="trained_models/linemod/pose_refine_model_current.pth"
 num_objects = 13
 objlist = [1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15]
 num_points = 500
@@ -39,9 +42,10 @@ knn = KNearestNeighbor(1)
 
 estimator = PoseNet(num_points = num_points, num_obj = num_objects)
 estimator.cuda()
-refiner = PoseRefineNet(num_points = num_points, num_obj = num_objects)
+refiner = PoseRefineNetRNN(num_points = num_points, num_obj = num_objects)
 refiner.cuda()
 estimator.load_state_dict(torch.load(opt.model))
+pu.db
 refiner.load_state_dict(torch.load(opt.refine_model))
 estimator.eval()
 refiner.eval()
