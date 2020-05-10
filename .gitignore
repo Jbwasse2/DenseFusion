@@ -2,6 +2,7 @@ datasets/linemod/
 datasets/ycb/YCB_Video_Dataset
 *.zip
 *__pycache__
+*.swp
 experiments/logs/*
 *.pyc
 lib/knn/knn_pytorch/__pycache__/*

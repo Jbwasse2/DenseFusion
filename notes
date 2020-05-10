@@ -1,0 +1,18 @@
+Notes:
+estimator = PoseNet
+refiner = PoseRefineNet
+
+Main:
+
+Sets parameters based off of what dataset is used
+Creates models
+If resume, get old parameters
+Load in dataset and create train/test dataloader
+
+for epoch in epochs:
+    for rep in repeated epoch:
+        forward pass estimator, get loss
+        use refiner to refine points for opt.iterations
+        save network weights every 1000 forward passes of data
+
+    basically repeat above for test data

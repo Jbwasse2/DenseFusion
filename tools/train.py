@@ -4,28 +4,30 @@
 # Written by Chen
 # --------------------------------------------------------
 
-import _init_paths
 import argparse
 import os
 import random
 import time
+
+import _init_paths
 import numpy as np
+import pudb
 import torch
+import torch.backends.cudnn as cudnn
 import torch.nn as nn
 import torch.nn.parallel
-import torch.backends.cudnn as cudnn
 import torch.optim as optim
 import torch.utils.data
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
-from torch.autograd import Variable
-from datasets.ycb.dataset import PoseDataset as PoseDataset_ycb
 from datasets.linemod.dataset import PoseDataset as PoseDataset_linemod
-from lib.network import PoseNet, PoseRefineNet
+from datasets.ycb.dataset import PoseDataset as PoseDataset_ycb
 from lib.loss import Loss
 from lib.loss_refiner import Loss_refine
+from lib.network import PoseNet, PoseRefineNet
 from lib.utils import setup_logger
+from torch.autograd import Variable
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', type=str, default = 'ycb', help='ycb or linemod')
@@ -41,9 +43,9 @@ parser.add_argument('--refine_margin', default=0.013, help='margin to start the 
 parser.add_argument('--noise_trans', default=0.03, help='range of the random noise of translation added to the training data')
 parser.add_argument('--iteration', type=int, default = 2, help='number of refinement iterations')
 parser.add_argument('--nepoch', type=int, default=500, help='max number of epochs to train')
-parser.add_argument('--resume_posenet', type=str, default = '',  help='resume PoseNet model')
+parser.add_argument('--resume_posenet', type=str, default = 'pose_model_6_0.012861979967502537.pth',  help='resume PoseNet model')
 parser.add_argument('--resume_refinenet', type=str, default = '',  help='resume PoseRefineNet model')
-parser.add_argument('--start_epoch', type=int, default = 1, help='which epoch to start')
+parser.add_argument('--start_epoch', type=int, default = 7, help='which epoch to start')
 opt = parser.parse_args()
 
 
@@ -75,9 +77,11 @@ def main():
 
     if opt.resume_posenet != '':
         estimator.load_state_dict(torch.load('{0}/{1}'.format(opt.outf, opt.resume_posenet)))
-
     if opt.resume_refinenet != '':
         refiner.load_state_dict(torch.load('{0}/{1}'.format(opt.outf, opt.resume_refinenet)))
+        parameters = torch.load('parameters_{0}/{1}'.format(opt.outf, opt.resume_refinenet))
+        refiner.co = parameters['co']
+        refiner.ho = parameters['ho']
         opt.refine_start = True
         opt.decay_start = True
         opt.lr *= opt.lr_rate
@@ -128,6 +132,8 @@ def main():
         optimizer.zero_grad()
 
         for rep in range(opt.repeat_epoch):
+            if not opt.refine_start:
+                break
             for i, data in enumerate(dataloader, 0):
                 points, choose, img, target, model_points, idx = data
                 points, choose, img, target, model_points, idx = Variable(points).cuda(), \
@@ -159,6 +165,7 @@ def main():
                 if train_count != 0 and train_count % 1000 == 0:
                     if opt.refine_start:
                         torch.save(refiner.state_dict(), '{0}/pose_refine_model_current.pth'.format(opt.outf))
+                        torch.save({'ho':refiner.ho, 'co':refiner.co}, '{0}/parameters_current.pth'.format(opt.outf))
                     else:
                         torch.save(estimator.state_dict(), '{0}/pose_model_current.pth'.format(opt.outf))
 
@@ -199,6 +206,7 @@ def main():
             best_test = test_dis
             if opt.refine_start:
                 torch.save(refiner.state_dict(), '{0}/pose_refine_model_{1}_{2}.pth'.format(opt.outf, epoch, test_dis))
+                torch.save({'ho':refiner.ho, 'co':refiner.co}, '{0}/parameters_{1}_{2}.pth'.format(opt.outf, epoch, test_dis))
             else:
                 torch.save(estimator.state_dict(), '{0}/pose_model_{1}_{2}.pth'.format(opt.outf, epoch, test_dis))
             print(epoch, '>>>>>>>>----------BEST TEST MODEL SAVED---------<<<<<<<<')
