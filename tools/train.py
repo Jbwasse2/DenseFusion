@@ -11,6 +11,7 @@ import time
 
 import _init_paths
 import numpy as np
+import pudb
 import torch
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
@@ -24,7 +25,10 @@ from datasets.linemod.dataset import PoseDataset as PoseDataset_linemod
 from datasets.ycb.dataset import PoseDataset as PoseDataset_ycb
 from lib.loss import Loss
 from lib.loss_refiner import Loss_refine
+
 from lib.network import PoseNet, PoseRefineNetRNN
+from lib.network import PoseNet, PoseRefineNet
+
 from lib.utils import setup_logger
 from torch.autograd import Variable
 
@@ -42,9 +46,11 @@ parser.add_argument('--refine_margin', default=0.013, help='margin to start the 
 parser.add_argument('--noise_trans', default=0.03, help='range of the random noise of translation added to the training data')
 parser.add_argument('--iteration', type=int, default = 2, help='number of refinement iterations')
 parser.add_argument('--nepoch', type=int, default=500, help='max number of epochs to train')
+
 parser.add_argument('--resume_posenet', type=str, default = 'pose_model_7_0.01272672920826872.pth',  help='resume PoseNet model')
 parser.add_argument('--resume_refinenet', type=str, default = 'pose_refine_model_current.pth',  help='resume PoseRefineNet model')
 parser.add_argument('--start_epoch', type=int, default = 20, help='which epoch to start')
+
 opt = parser.parse_args()
 
 
@@ -78,9 +84,11 @@ def main():
         estimator.load_state_dict(torch.load('{0}/{1}'.format(opt.outf, opt.resume_posenet)))
     if opt.resume_refinenet != '':
         refiner.load_state_dict(torch.load('{0}/{1}'.format(opt.outf, opt.resume_refinenet)))
-#        parameters = torch.load('parameters_{0}/{1}'.format(opt.outf, opt.resume_refinenet))
-#        refiner.co = parameters['co']
-#        refiner.ho = parameters['ho']
+
+        parameters = torch.load('parameters_{0}/{1}'.format(opt.outf, opt.resume_refinenet))
+        refiner.co = parameters['co']
+        refiner.ho = parameters['ho']
+
         opt.refine_start = True
         opt.decay_start = True
         opt.lr *= opt.lr_rate

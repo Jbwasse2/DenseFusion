@@ -1,4 +1,6 @@
+
 Justin's Notes:
+
 estimator = PoseNet
 refiner = PoseRefineNet
 

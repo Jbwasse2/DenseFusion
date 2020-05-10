@@ -51,12 +51,21 @@ class PoseNetFeat(nn.Module):
         self.conv5 = torch.nn.Conv1d(256, 512, 1)
         self.conv6 = torch.nn.Conv1d(512, 1024, 1)
 
+        self.conv_new1 = torch.nn.Conv1d(128, 256, 1)
+        self.conv_new2 = torch.nn.Conv1d(256, 512, 1)
+
         self.ap1 = torch.nn.AvgPool1d(num_points)
+        self.maxpool = torch.nn.MaxPool1d(num_points)
         self.num_points = num_points
     def forward(self, x, emb):
         x = F.relu(self.conv1(x))
         emb = F.relu(self.e_conv1(emb))
         pointfeat_1 = torch.cat((x, emb), dim=1)
+
+        new_global = F.relu(self.conv_new1(pointfeat_1))
+        new_global = F.relu(self.conv_new2(new_global))
+        new_global = self.maxpool(new_global) #512
+        new_global = new_global.view(-1, 512, 1).repeat(1, 1, self.num_points)
 
         x = F.relu(self.conv2(x))
         emb = F.relu(self.e_conv2(emb))
@@ -68,7 +77,7 @@ class PoseNetFeat(nn.Module):
         ap_x = self.ap1(x)
 
         ap_x = ap_x.view(-1, 1024, 1).repeat(1, 1, self.num_points)
-        return torch.cat([pointfeat_1, pointfeat_2, ap_x], 1) #128 + 256 + 1024
+        return torch.cat([pointfeat_1, pointfeat_2, ap_x, new_global], 1) #128 + 256 + 1024 + 512
 
 class PoseNet(nn.Module):
     def __init__(self, num_points, num_obj):
@@ -77,9 +86,9 @@ class PoseNet(nn.Module):
         self.cnn = ModifiedResnet()
         self.feat = PoseNetFeat(num_points)
         
-        self.conv1_r = torch.nn.Conv1d(1408, 640, 1)
-        self.conv1_t = torch.nn.Conv1d(1408, 640, 1)
-        self.conv1_c = torch.nn.Conv1d(1408, 640, 1)
+        self.conv1_r = torch.nn.Conv1d(1920, 640, 1)
+        self.conv1_t = torch.nn.Conv1d(1920, 640, 1)
+        self.conv1_c = torch.nn.Conv1d(1920, 640, 1)
 
         self.conv2_r = torch.nn.Conv1d(640, 256, 1)
         self.conv2_t = torch.nn.Conv1d(640, 256, 1)
@@ -174,6 +183,9 @@ class PoseRefineNet(nn.Module):
     def __init__(self, num_points, num_obj):
         super(PoseRefineNet, self).__init__()
         self.num_points = num_points
+        self.hidden_layer_size = 1024
+        self.num_layers = 4
+        self.lstm = torch.nn.LSTM(1024, self.hidden_layer_size, self.num_layers)
         self.feat = PoseRefineNetFeat(num_points)
         
         self.conv1_r = torch.nn.Linear(1024, 512)
@@ -186,13 +198,17 @@ class PoseRefineNet(nn.Module):
         self.conv3_t = torch.nn.Linear(128, num_obj*3) #translation
 
         self.num_obj = num_obj
+        self.ho = torch.zeros(self.num_layers,1,self.hidden_layer_size)
+        self.co = torch.zeros(self.num_layers,1,self.hidden_layer_size)
+        self.ho = self.ho.cuda()
+        self.co = self.co.cuda()
 
     def forward(self, x, emb, obj):
         bs = x.size()[0]
-        
         x = x.transpose(2, 1).contiguous()
         ap_x = self.feat(x, emb)
-
+        ap_x = ap_x.unsqueeze(0)
+        ap_x, (ho,co) = self.lstm(ap_x, (self.ho,self.co))
         rx = F.relu(self.conv1_r(ap_x))
         tx = F.relu(self.conv1_t(ap_x))   
 
